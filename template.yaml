@@ -1,0 +1,45 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  equationbot-app
+  
+Globals:
+  Function:
+    Timeout: 10
+
+Resources:
+  EquationBotFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: equationbot/
+      Handler: app.lambdaHandler
+      Runtime: nodejs14.x
+      Layers:
+        - !Ref EquationBotDepLayer
+      Events:
+        EquationBot:
+          Type: Api
+          Properties:
+            Path: /hook
+            Method: get
+  EquationBotDepLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      LayerName: equation-bot-nodejs-deps
+      Description: Dependencies for EquationBot
+      ContentUri: dependencies/
+      CompatibleRuntimes:
+        - nodejs14.x
+      LicenseInfo: 'MIT'
+      RetentionPolicy: Retain
+
+Outputs:
+  EquationBotApi:
+    Description: "API Gateway endpoint URL for Prod stage for Hello World function"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/equationbot/"
+  EquationBotFunction:
+    Description: "Equation Bot Lambda Function ARN"
+    Value: !GetAtt EquationBotFunction.Arn
+  EquationBotFunctionIamRole:
+    Description: "Implicit IAM Role created for Equation Bot function"
+    Value: !GetAtt EquationBotFunctionRole.Arn
