@@ -12,11 +12,26 @@ const SAMPLE_MESSAGE_TEXT = 'As an example, copy the next message I send and sen
 const HELPTEXT = 'I can send you back a rendered version of a LaTeX equation that you send.\nHit /sample for a sample input';
 const EMPTY_TEXT = 'You entered /typeset but didn\'t provide anything to convert. Hit /sample for a sample input';
 
+
 /**
- * * * Factory function for telegram bot
- * * */
+ * Configure Telegram bot to reply with a fixed message
+ * @param {TelegramBot} bot 
+ * @param {RegExp} re
+ * @param {String} text 
+ * @param callback 
+ */
+function replyWithFixedText(bot, re, text, callback) {
+    bot.onText(re, (msg) => {
+        const chatId = msg.chat.id;
+        bot.sendMessage(chatId, text).then(callback);
+    });
+}
+
+
+/**
+ * Factory function for telegram bot
+ */
 function createBot(callback) {
-    console.log(process.env.TELEGRAM_TOKEN);
     const bot = new TelegramBot(process.env.TELEGRAM_TOKEN);
 
     bot.onText(/\/typeset(?:@[A-Za-z]+|)(.*)/, (msg, match) => {
@@ -44,15 +59,8 @@ function createBot(callback) {
             .then(callback);
     });
 
-    bot.onText(/\/help(?:@[A-Za-z]+|)/, (msg) => {
-        const chatId = msg.chat.id;
-        bot.sendMessage(chatId, HELPTEXT).then(callback);
-    });
-
-    bot.onText(/\/start(?:@[A-Za-z]+|)/, (msg) => {
-        const chatId = msg.chat.id;
-        bot.sendMessage(chatId, HELPTEXT).then(callback);
-    });
+    replyWithFixedText(bot, /\/help(?:@[A-Za-z]+|)/, HELPTEXT, callback);
+    replyWithFixedText(bot, /\/start(?:@[A-Za-z]+|)/, HELPTEXT, callback);
 
     return bot;
 }
