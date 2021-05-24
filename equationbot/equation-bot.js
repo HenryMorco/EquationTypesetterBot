@@ -29,16 +29,17 @@ function replyWithFixedText(bot, re, text, callback) {
 
 
 /**
- * Factory function for telegram bot
+ * Create Telegram Bot API
+ * @param {String} token The Telegram Token for your bot.
+ * @param {*} callback What to do after the event is over
  */
-function createBot(callback) {
-    const bot = new TelegramBot(process.env.TELEGRAM_TOKEN);
+function createBot(token, callback) {
+    const bot = new TelegramBot(token);
 
     bot.onText(/\/typeset(?:@[A-Za-z]+|)(.*)/, (msg, match) => {
         const chatId = msg.chat.id;
         const texInput = match[1].trim();
         if (!texInput) {
-            console.log('Empty typeset input!')
             bot.sendMessage(chatId, EMPTY_TEXT).then(callback);
             return;
         }
