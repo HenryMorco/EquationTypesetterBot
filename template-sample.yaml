@@ -16,12 +16,19 @@ Resources:
       Runtime: nodejs14.x
       Layers:
         - !Ref EquationBotDepLayer
+        - "<YOUR-LAYER-ARN>"
+      Environment:
+        Variables:
+          RSVGCONVERT_PATH: "/opt/bin/rsvg-convert"
+          NTBA_FIX_319: 1
+          EX_TO_PX_SCALE: 15
+          TELEGRAM_TOKEN: "<YOUR_BOT_TOKEN>"
       Events:
         EquationBot:
           Type: Api
           Properties:
             Path: /hook
-            Method: get
+            Method: post
   EquationBotDepLayer:
     Type: AWS::Serverless::LayerVersion
     Properties:

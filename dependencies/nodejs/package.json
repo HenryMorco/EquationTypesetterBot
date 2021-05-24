@@ -1,5 +1,8 @@
 {
   "dependencies": {
-    "temp-units-conv": "^1.0.2"
+    "child-process-promise": "^2.2.1",
+    "mathjax-node": "^2.1.1",
+    "node-telegram-bot-api": "^0.53.0",
+    "uuid": "^3.4.0"
   }
 }
