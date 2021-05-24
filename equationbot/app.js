@@ -88,7 +88,7 @@ exports.lambdaHandler = async (event) => {
             if (messageText.startsWith('/typeset')) {
                 runTypeSetter(messageText.substring(9), chatId).then(resolveOK);
             } else {
-                bot.sendMessage("I don't understand").then(resolveOK);
+                bot.sendMessage(chatId, 'I don\'t understand').then(resolveOK);
             }
         } catch (err) {
             console.error(err);
