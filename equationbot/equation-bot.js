@@ -11,59 +11,85 @@ const SAMPLE_MESSAGE = '/typeset \\mathbf{e}^{i \\pi} + 1 = 0';
 const SAMPLE_MESSAGE_TEXT = 'As an example, copy the next message I send and send it back to me';
 const HELPTEXT = 'I can send you back a rendered version of a LaTeX equation that you send.\nHit /sample for a sample input';
 const EMPTY_TEXT = 'You entered /typeset but didn\'t provide anything to convert. Hit /sample for a sample input';
+const DEFAULT_TEXT = 'I didn\'t quite understand that. Please hit /help for directions.';
 
+class EquationTypesetterBot {
 
-/**
- * Configure Telegram bot to reply with a fixed message
- * @param {TelegramBot} bot 
- * @param {RegExp} re
- * @param {String} text 
- * @param callback 
- */
-function replyWithFixedText(bot, re, text, callback) {
-    bot.onText(re, (msg) => {
-        const chatId = msg.chat.id;
-        bot.sendMessage(chatId, text).then(callback);
-    });
-}
+    /**
+     * Constructor.
+     * @param {String} token 
+     */
+    constructor(token) {
+        this.bot = new TelegramBot(token);
+        this.tasks = [];
+        this.configure();
+    }
 
+    /**
+     * Configures TelegramBot, adding hooks
+     * @param {TelegramBot} bot 
+     */
+    configure() {
+        this.replyWithFixedText(/\/help(?:@[A-Za-z]+|)/, HELPTEXT);
+        this.replyWithFixedText(/\/start(?:@[A-Za-z]+|)/, HELPTEXT);
 
-/**
- * Create Telegram Bot API
- * @param {String} token The Telegram Token for your bot.
- * @param {*} callback What to do after the event is over
- */
-function createBot(token, callback) {
-    const bot = new TelegramBot(token);
+        this.bot.onText(/\/sample(?:@[A-Za-z]+|)/, (msg) => {
+            const chatId = msg.chat.id;
+            this.tasks.push(this.bot.sendMessage(chatId, SAMPLE_MESSAGE_TEXT)
+                .then(this.bot.sendMessage(chatId, SAMPLE_MESSAGE)));
+        });
 
-    bot.onText(/\/typeset(?:@[A-Za-z]+|)(.*)/, (msg, match) => {
-        const chatId = msg.chat.id;
-        const texInput = match[1].trim();
-        if (!texInput) {
-            bot.sendMessage(chatId, EMPTY_TEXT).then(callback);
-            return;
+        this.bot.onText(/\/typeset(?:@[A-Za-z]+|)(.*)/, (msg, match) => {
+            const chatId = msg.chat.id;
+            const texInput = match[1].trim();
+            if (!texInput) {
+                this.tasks.push(this.bot.sendMessage(chatId, EMPTY_TEXT));
+                return;
+            }
+            this.tasks.push(this.bot.sendChatAction(chatId, 'upload_photo')
+                .then(() => typesetter.typeset(texInput))
+                .then(buf => {
+                    if (buf.systemErrors) { return this.bot.sendMessage(chatId, 'System error. Sorry!'); }
+                    if (buf.mathJaxErrors) { return this.bot.sendMessage(chatId, 'Got a MathJax Error converting your input!: ' + buf.mathJaxErrors.join(' ')); }
+                    return this.bot.sendPhoto(chatId, buf.pngBuffer, {}, PNG_FILEOPTIONS);
+                }));
+        });
+    }
+
+    /**
+     * Invoke default action.
+     * @param {object} update 
+     */
+    defaultAction(update) {
+        if (update && update.message && update.message.chat && update.message.chat.id) {
+            return this.bot.sendMessage(update.message.chat.id, DEFAULT_TEXT);
+        } else {
+            console.log('DefaultAction: Couldnt find chat ID to reply to');
+            return Promise.resolve(true);
         }
-        bot.sendChatAction(chatId, 'upload_photo')
-            .then(() => typesetter.typeset(texInput))
-            .then(buf => {
-                if (buf.systemErrors) { return bot.sendMessage(chatId, 'System error. Sorry!'); }
-                if (buf.mathJaxErrors) { return bot.sendMessage(chatId, 'Got a MathJax Error converting your input!: ' + buf.mathJaxErrors.join(' ')); }
-                return bot.sendPhoto(chatId, buf.pngBuffer, {}, PNG_FILEOPTIONS);
-            })
-            .then(callback);
-    });
+    }
 
-    bot.onText(/\/sample(?:@[A-Za-z]+|)/, (msg) => {
-        const chatId = msg.chat.id;
-        bot.sendMessage(chatId, SAMPLE_MESSAGE_TEXT)
-            .then(bot.sendMessage(chatId, SAMPLE_MESSAGE))
-            .then(callback);
-    });
+    /**
+     * Entry point for the class. Takes in update from API
+     * @param {object} update 
+     * @returns {Promise<any>} Promise concluding when all done for this update.
+     */
+    process(update) {
+        this.bot.processUpdate(update);
+        if (this.tasks.length == 0) {
+            this.tasks.push(this.defaultAction(update));
+        }
+        return Promise.all(this.tasks);
+    }
 
-    replyWithFixedText(bot, /\/help(?:@[A-Za-z]+|)/, HELPTEXT, callback);
-    replyWithFixedText(bot, /\/start(?:@[A-Za-z]+|)/, HELPTEXT, callback);
-
-    return bot;
+    /**
+     * Configure Telegram bot to reply with a fixed message
+     * @param {RegExp} re
+     * @param {String} text 
+     */
+    replyWithFixedText(re, text) {
+        return this.bot.onText(re, (msg) => this.tasks.push(this.bot.sendMessage(msg.chat.id, text)));
+    }
 }
 
-module.exports = { createBot };
+module.exports = { EquationTypesetterBot };
