@@ -7,10 +7,9 @@ const PNG_FILEOPTIONS = {
     filename: 'tex.png',
     contentType: 'image/png'
 };
-const SAMPLE_MESSAGE = '/typeset \\mathbf{e}^{i \\pi} + 1 = 0';
-const SAMPLE_MESSAGE_TEXT = 'As an example, copy the next message I send and send it back to me';
-const HELPTEXT = 'I can send you back a rendered version of a LaTeX equation that you send.\nHit /sample for a sample input';
-const EMPTY_TEXT = 'You entered /typeset but didn\'t provide anything to convert. Hit /sample for a sample input';
+const SAMPLE_MESSAGE_TEXT = 'Try sending some LaTeX, like `\/typeset \\\\pi \\\\approx 3`\\. I\'ll respond back with the image\\.\nI can also do chemical equations\\. Try `\/typeset \\\\ce{2H2 + O2 -> 2H2O}`\\!';
+const STARTTEXT = 'To get started, send in /typeset with some LaTeX\\.\nFor an example, hit /help\\.'
+const EMPTY_TEXT = 'You entered /typeset but didn\'t provide anything to convert. Hit /help for some sample inputs';
 const DEFAULT_TEXT = 'I didn\'t quite understand that. Please hit /help for directions.';
 
 class EquationTypesetterBot {
@@ -30,14 +29,8 @@ class EquationTypesetterBot {
      * @param {TelegramBot} bot 
      */
     configure() {
-        this.replyWithFixedText(/\/help(?:@[A-Za-z]+|)/, HELPTEXT);
-        this.replyWithFixedText(/\/start(?:@[A-Za-z]+|)/, HELPTEXT);
-
-        this.bot.onText(/\/sample(?:@[A-Za-z]+|)/, (msg) => {
-            const chatId = msg.chat.id;
-            this.tasks.push(this.bot.sendMessage(chatId, SAMPLE_MESSAGE_TEXT)
-                .then(this.bot.sendMessage(chatId, SAMPLE_MESSAGE)));
-        });
+        this.replyWithFixedText(/\/start(?:@[A-Za-z]+|)/, STARTTEXT);
+        this.replyWithFixedText(/\/help(?:@[A-Za-z]+|)/, SAMPLE_MESSAGE_TEXT);
 
         this.bot.onText(/\/typeset(?:@[A-Za-z]+|)(.*)/, (msg, match) => {
             const chatId = msg.chat.id;
@@ -88,7 +81,8 @@ class EquationTypesetterBot {
      * @param {String} text 
      */
     replyWithFixedText(re, text) {
-        return this.bot.onText(re, (msg) => this.tasks.push(this.bot.sendMessage(msg.chat.id, text)));
+        return this.bot.onText(re, (msg) =>
+            this.tasks.push(this.bot.sendMessage(msg.chat.id, text, { parse_mode: 'MarkdownV2' })));
     }
 }
 
