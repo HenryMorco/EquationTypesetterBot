@@ -9,7 +9,6 @@ exports.lambdaHandler = async (event) => {
         const bot = new equationbot.EquationTypesetterBot(TELEGRAM_TOKEN);
         try {
             const update = JSON.parse(event.body);
-            console.log(update);
             bot.process(update).then(() => { resolve({ statusCode: 200, body: 'OK' }); });
         } catch (err) {
             console.error(err);
