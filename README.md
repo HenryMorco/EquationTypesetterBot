@@ -14,7 +14,7 @@ binary utility to convert to PNG (which can be sent back thru Telegram).
 
 ### Prerequisites
 - AWS Account
-- AWS CLI
+- AWS SAM CLI
 - Telegram Account (to create bot)
 
 ### Steps
@@ -27,9 +27,16 @@ AWS space.
 3. Create a template.yaml based on the sample, fill in the ARN of the RSVG layer
 and the Telegram Bot token.
 
-4. Use AWS CLI to deploy your template.yaml.
+4. Run `npm install` in dependencies/nodejs.
 
-5. Call Telegram API to [set the
+5. Use AWS CLI to deploy your template.yaml:
+   
+   ```
+   sam package --template-file template.yaml --s3-bucket <your-bucket-name> --output-template-file out.yml
+   sam deploy --template-file ./out.yml --stack-name <your-stack-name> --capabilities CAPABILITY_IAM
+   ```
+
+6. Call Telegram API to [set the
 webhook](https://core.telegram.org/bots/api#setwebhook) to the API endpoint that
 was created during deployment.
 
