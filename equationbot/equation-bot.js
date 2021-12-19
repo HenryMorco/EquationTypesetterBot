@@ -51,11 +51,11 @@ class EquationTypesetterBot {
 
     /**
      * Invoke default action.
-     * @param {object} update 
+     * @param {object} message
      */
-    defaultAction(update) {
-        if (update && update.message && update.message.chat && update.message.chat.id) {
-            return this.bot.sendMessage(update.message.chat.id, DEFAULT_TEXT);
+    defaultAction(message) {
+        if (message.chat && message.chat.id) {
+            return this.bot.sendMessage(message.chat.id, DEFAULT_TEXT);
         } else {
             console.log('DefaultAction: Couldnt find chat ID to reply to');
             return Promise.resolve(true);
@@ -68,9 +68,11 @@ class EquationTypesetterBot {
      * @returns {Promise<any>} Promise concluding when all done for this update.
      */
     process(update) {
+        // If no update, or update is non-text message (eg group update), don't do anything
+        if (!update || !update.message || !update.message.text) return Promise.resolve();
         this.bot.processUpdate(update);
         if (this.tasks.length == 0) {
-            this.tasks.push(this.defaultAction(update));
+            this.tasks.push(this.defaultAction(update.message));
         }
         return Promise.all(this.tasks);
     }
